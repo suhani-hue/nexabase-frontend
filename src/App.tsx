@@ -1,237 +1,183 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useRef } from 'react';
 import {
   ArrowRight, Check, Code2, Database, Github, HardDrive, KeyRound,
-  LockKeyhole, Menu, RefreshCw, ShieldCheck, Sparkles, X, Globe,
-  Cpu, GitBranch, Activity, Layers, Webhook, Terminal, Rocket, Boxes, Gauge,
+  LockKeyhole, RefreshCw, ShieldCheck, Sparkles, Globe,
+  Cpu, GitBranch, Activity, Webhook, Terminal, Rocket, Layers, Gauge, Boxes,
 } from 'lucide-react';
+import { Hero3D } from './components/Hero3D';
+import { Logo } from './components/brand/Logo';
 
-const Hero3D = lazy(() => import('./components/Hero3D'));
-
-const navItems = ['Features', 'Developers', 'Pricing', 'Docs'];
+const navItems = ['Features', 'Developers', 'Pricing'];
 
 const features = [
-  { icon: KeyRound, title: 'Authentication', text: 'Password, OAuth, and magic-link flows that just work — no auth server to maintain.' },
-  { icon: Database, title: 'Database', text: 'A real database with instant APIs, row-level security, and branching.' },
-  { icon: HardDrive, title: 'Storage', text: 'Upload, transform, and serve files globally with a CDN-backed object store.' },
-  { icon: ShieldCheck, title: 'Security', text: 'Row-level policies, signed URLs, and rate limiting enforced at the edge.' },
-  { icon: Code2, title: 'REST API', text: 'Every table gets a typed, auto-generated REST endpoint instantly.' },
-  { icon: RefreshCw, title: 'Token Refresh', text: 'Silent session refresh keeps users signed in without a single line of code.' },
-  { icon: Globe, title: 'Edge Functions', text: 'Deploy serverless functions that run 50ms from every user.' },
-  { icon: GitBranch, title: 'Database Branching', text: 'Spin up a full database copy per pull request, then merge or discard.' },
-  { icon: Activity, title: 'Realtime', text: 'Subscribe to any row, broadcast presence, and sync state over websockets.' },
-  { icon: Webhook, title: 'Webhooks', text: 'Fire signed webhooks on any data event with automatic retries.' },
-  { icon: Cpu, title: 'Vector AI', text: 'Store embeddings and run similarity search in the same database as your app.' },
-  { icon: Gauge, title: 'Observability', text: 'Logs, traces, and query analytics streamed live from every request.' },
+  { icon: KeyRound, title: 'Authentication', text: 'Password and JWT flows that just work.' },
+  { icon: Database, title: 'Database', text: 'A real database with instant APIs.' },
+  { icon: HardDrive, title: 'Storage', text: 'Upload and serve files globally.' },
+  { icon: ShieldCheck, title: 'Security', text: 'bcrypt passwords and token expiry.' },
+  { icon: Code2, title: 'REST API', text: 'Clean endpoints for every resource.' },
+  { icon: RefreshCw, title: 'Token Refresh', text: 'Silent session refresh built in.' },
+  { icon: Globe, title: 'Edge Ready', text: 'Deploy anywhere in the world.' },
+  { icon: GitBranch, title: 'Open Source', text: 'Fork it, own it, extend it.' },
+  { icon: Activity, title: 'Realtime', text: 'Live data sync coming soon.' },
+  { icon: Webhook, title: 'Webhooks', text: 'Fire events on any data change.' },
+  { icon: Cpu, title: 'AI Ready', text: 'Store embeddings and run search.' },
+  { icon: Gauge, title: 'Observability', text: 'Logs and analytics built in.' },
 ];
 
 const stats = [
-  { value: 99.99, suffix: '%', label: 'Uptime SLA' },
-  { value: 30, prefix: '<', suffix: 'ms', label: 'Edge latency' },
-  { value: 12, suffix: 'M+', label: 'Daily requests' },
-  { value: 180, suffix: '+', label: 'Edge regions' },
+  { value: '99.99%', label: 'Uptime SLA' },
+  { value: '<30ms', label: 'Edge latency' },
+  { value: '12M+', label: 'Daily requests' },
+  { value: '180+', label: 'Edge regions' },
 ];
 
 const plans = [
-  { name: 'Free', price: '$0', period: 'forever', tagline: 'For trying things out', features: ['10,000 API requests / mo', '500 MB database', '1 GB storage', 'Community support'], cta: 'Start free', featured: false },
-  { name: 'Pro', price: '$29', period: '/ month', tagline: 'For serious builders', features: ['Unlimited API requests', '100 GB database', '100 GB storage', 'Priority support', 'Database branching', 'Edge functions'], cta: 'Start Pro trial', featured: true },
+  {
+    name: 'Free', price: '$0', period: 'forever',
+    tagline: 'For trying things out',
+    features: ['10,000 API requests / mo', '500 MB database', '1 GB storage', 'Community support'],
+    cta: 'Start free', featured: false,
+  },
+  {
+    name: 'Pro', price: '$29', period: '/ month',
+    tagline: 'For serious builders',
+    features: ['Unlimited API requests', '100 GB database', '100 GB storage', 'Priority support', 'Edge functions'],
+    cta: 'Start Pro trial', featured: true,
+  },
 ];
 
-function useCounter(target: number, start: boolean, duration = 1800) {
-  const [value, setValue] = useState(0);
-  const startedRef = useRef(false);
-  useEffect(() => {
-    if (!start || startedRef.current) return;
-    startedRef.current = true;
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min((now - t0) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(target * eased);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [start, target, duration]);
-  return value;
-}
-
-function StatCounter({ stat, index }: { stat: typeof stats[number]; index: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
-  const value = useCounter(stat.value, inView);
-  const display = stat.value % 1 === 0 ? Math.round(value).toString() : value.toFixed(2);
-  return (
-    <motion.div ref={ref} className="stat"
-      initial={{ opacity: 0, y: 24 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-    >
-      <strong>{stat.prefix}{display}{stat.suffix}</strong>
-      <span>{stat.label}</span>
-    </motion.div>
-  );
-}
-
-const sectionVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: (i = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.7, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
-function Section({ children, className = '', id }: { children: React.ReactNode; className?: string; id?: string }) {
-  return (
-    <motion.section id={id} className={className}
-      initial="hidden" whileInView="visible"
-      viewport={{ once: true, margin: '-100px' }}
-      variants={sectionVariants}
-    >
-      {children}
-    </motion.section>
-  );
-}
-
 function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 160]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
   return (
-    <div className="site-shell">
-      <div className="grain" />
-      <div className="bg-orbs"><span className="orb orb-purple" /><span className="orb orb-pink" /></div>
+    <div style={{ background: '#000', minHeight: '100vh', color: '#f5f5f5' }}>
 
-      <header className="navbar">
-        <a className="brand" href="#top" aria-label="NexaBase home">
-          <span className="brand-mark"><span /></span>
-          <span>Nexa<span className="brand-light">Base</span></span>
-        </a>
-        <nav className="desktop-nav" aria-label="Main navigation">
-          {navItems.map((item) => <a key={item} href={`#${item.toLowerCase()}`}>{item}</a>)}
-          <a href="https://github.com/suhani-hue/backend-for-apps" aria-label="GitHub"><Github size={15} /></a>
-        </nav>
-        <div className="nav-actions">
-          <a className="login-link" href="#login">Log in</a>
-          <a className="button button-small" href="#pricing">Start building <ArrowRight size={15} /></a>
-          <button className="menu-button" aria-label="Toggle menu" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+      {/* Navbar */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 40, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)' }}>
+        <div style={{ maxWidth: '1160px', margin: '0 auto', padding: '0 32px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Logo />
+          <nav style={{ display: 'flex', gap: '30px' }}>
+            {navItems.map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`} style={{ color: '#85838d', fontSize: '13px', fontWeight: 500, textDecoration: 'none' }}>{item}</a>
+            ))}
+          </nav>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <a href="https://github.com/suhani-hue/backend-for-apps" target="_blank" rel="noreferrer" style={{ color: '#85838d' }}>
+              <Github size={18} />
+            </a>
+            <a href="#pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '10px', background: 'linear-gradient(100deg, #a855f7, #ec4899)', color: '#fff', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+              Start building <ArrowRight size={15} />
+            </a>
+          </div>
         </div>
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div className="mobile-menu"
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            >
-              {navItems.map((item) => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenuOpen(false)}>{item}</a>)}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
-      <main id="top">
-        <section className="hero" ref={heroRef}>
-          <motion.div className="hero-bg-3d" style={{ opacity: heroOpacity }}>
-            <Suspense fallback={<div className="sphere-fallback" />}>
-              <Hero3D />
-            </Suspense>
-          </motion.div>
-          <div className="hero-inner section-wrap">
-            <motion.div className="hero-copy" style={{ y: heroY }}
-              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="eyebrow"><span className="status-dot" /> The backend for what&apos;s next</div>
-              <h1>Build your future<br /><span className="gradient-text">backend</span> in minutes.</h1>
-              <p className="hero-subtitle">NexaBase gives you auth, a database, and data storage in one simple API — powered by a live backend at <code>backend-for-apps.onrender.com</code>.</p>
-              <div className="hero-actions">
-                <a className="button" href="#pricing">Start building free <ArrowRight size={17} /></a>
-                <a className="text-link" href="#docs">Read the docs <ArrowRight size={16} /></a>
-              </div>
-              <div className="trusted-row"><span>Trusted by builders at</span><strong>◎ orbit</strong><strong>northstar</strong><strong>⟡ radix</strong></div>
-            </motion.div>
-          </div>
-        </section>
+      {/* Hero */}
+      <Hero3D />
 
-        <Section className="stats-section section-wrap" id="stats">
-          <div className="stats-grid">
-            {stats.map((stat, i) => <StatCounter key={stat.label} stat={stat} index={i} />)}
-          </div>
-        </Section>
-
-        <Section className="features-section section-wrap" id="features">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow"><Sparkles size={12} /> Everything, connected</div>
-              <h2>The essentials.<br /><span className="gradient-text">Beautifully simple.</span></h2>
+      {/* Stats */}
+      <div style={{ maxWidth: '1160px', margin: '0 auto', padding: '0 32px 80px' }}>
+        <motion.div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', border: '1px solid rgba(168,85,247,0.15)', borderRadius: '16px', overflow: 'hidden', background: 'rgba(10,8,16,0.4)', backdropFilter: 'blur(12px)' }}
+          initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
+        >
+          {stats.map((stat, i) => (
+            <div key={stat.label} style={{ padding: '32px 28px', borderRight: i < 3 ? '1px solid rgba(168,85,247,0.12)' : 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <strong style={{ fontSize: '36px', fontWeight: 700, background: 'linear-gradient(135deg, #fff, #c4b5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{stat.value}</strong>
+              <span style={{ color: '#8a8392', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.14em', fontWeight: 600 }}>{stat.label}</span>
             </div>
-            <p>Powerful primitives that feel like they were made for your product — because they were.</p>
-          </div>
-          <div className="feature-grid">
-            {features.map((feature, i) => {
-              const Icon = feature.icon;
-              return (
-                <motion.article className="feature-card" key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-60px' }}
-                  transition={{ duration: 0.5, delay: (i % 3) * 0.08 }}
-                  whileHover={{ y: -6 }}
-                >
-                  <div className="card-icon"><Icon size={20} /></div>
-                  <div className="card-body"><h3>{feature.title}</h3><p>{feature.text}</p></div>
-                  <ArrowRight className="card-arrow" size={18} />
-                </motion.article>
-              );
-            })}
-          </div>
-        </Section>
+          ))}
+        </motion.div>
+      </div>
 
-        <Section className="bento-section section-wrap" id="bento">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow"><Boxes size={12} /> One platform</div>
-              <h2>Not a stack.<br /><span className="gradient-text">A single source of truth.</span></h2>
-            </div>
-            <p>Stop wiring together five services. NexaBase unifies the whole backend into one API surface.</p>
+      {/* Features */}
+      <div id="features" style={{ maxWidth: '1160px', margin: '0 auto', padding: '60px 32px 120px' }}>
+        <motion.div style={{ marginBottom: '56px' }} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '9px', color: '#b8a8d4', textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: '11px', fontWeight: 700, padding: '7px 14px', borderRadius: '100px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)' }}>
+            <Sparkles size={12} /> Everything, connected
           </div>
-          <div className="bento-grid">
-            <motion.div className="bento bento-tall" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-              <Terminal size={22} /><h3>One SDK, every primitive</h3><p>Auth, database, storage, realtime, and edge functions all live behind a single typed client.</p>
-            </motion.div>
-            <motion.div className="bento" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.08 }}>
-              <Layers size={22} /><h3>Branch like code</h3><p>Database branches per PR. Isolate schema changes, run migrations, and merge when green.</p>
-            </motion.div>
-            <motion.div className="bento" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.16 }}>
-              <Globe size={22} /><h3>Global by default</h3><p>180+ edge regions. Your data and logic run close to every user, every time.</p>
-            </motion.div>
-            <motion.div className="bento bento-wide" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.24 }}>
-              <Rocket size={22} /><h3>Ship in minutes, not sprints</h3><p>From signup to production in a single afternoon. No infra team, no YAML, no waiting.</p>
-            </motion.div>
-          </div>
-        </Section>
+          <h2 style={{ margin: '20px 0 0', fontSize: 'clamp(38px, 4.5vw, 60px)', lineHeight: 1.04, letterSpacing: '-0.06em', fontWeight: 700 }}>
+            The essentials.<br /><span className="text-gradient">Beautifully simple.</span>
+          </h2>
+        </motion.div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+          {features.map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div key={feature.title}
+                style={{ padding: '28px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(20,16,30,0.6), rgba(8,6,14,0.6))', backdropFilter: 'blur(16px)', cursor: 'pointer' }}
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: (i % 3) * 0.08 }}
+                whileHover={{ y: -6, borderColor: 'rgba(168,85,247,0.4)' }}
+              >
+                <div style={{ width: '44px', height: '44px', display: 'grid', placeItems: 'center', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(236,72,153,0.15))', color: '#c4b5fd', border: '1px solid rgba(168,85,247,0.2)', marginBottom: '16px' }}>
+                  <Icon size={20} />
+                </div>
+                <h3 style={{ margin: '0 0 6px', fontSize: '17px', letterSpacing: '-0.02em', fontWeight: 600 }}>{feature.title}</h3>
+                <p style={{ margin: 0, color: '#8a8392', fontSize: '13px', lineHeight: 1.6 }}>{feature.text}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
 
-        <Section className="developer-section section-wrap" id="developers">
-          <div className="developer-copy">
-            <div className="eyebrow"><span className="sparkle"><Sparkles size={13} /></span> Developer experience</div>
-            <h2>From idea to<br /><span className="gradient-text">in production.</span></h2>
-            <p>One SDK. One API. A thousand fewer things to worry about.</p>
-            <a className="text-link" href="#docs">Explore the API <ArrowRight size={16} /></a>
+      {/* Bento */}
+      <div style={{ maxWidth: '1160px', margin: '0 auto', padding: '0 32px 120px' }}>
+        <motion.div style={{ marginBottom: '56px' }} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '9px', color: '#b8a8d4', textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: '11px', fontWeight: 700, padding: '7px 14px', borderRadius: '100px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)' }}>
+            <Boxes size={12} /> One platform
           </div>
-          <motion.div className="code-window" id="docs"
-            initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }} transition={{ duration: 0.7 }}
-          >
-            <div className="window-top">
-              <div className="window-dots"><i /><i /><i /></div>
-              <span>nexabase.ts</span>
-              <span className="window-lock"><LockKeyhole size={13} /> secure</span>
+          <h2 style={{ margin: '20px 0 0', fontSize: 'clamp(38px, 4.5vw, 60px)', lineHeight: 1.04, letterSpacing: '-0.06em', fontWeight: 700 }}>
+            Not a stack.<br /><span className="text-gradient">A single source of truth.</span>
+          </h2>
+        </motion.div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: '200px', gap: '16px' }}>
+          {[
+            { icon: Terminal, title: 'One SDK, every primitive', text: 'Auth, database, storage all behind one simple API.', span: 'row', bg: 'rgba(168,85,247,0.12)' },
+            { icon: Layers, title: 'Branch like code', text: 'Isolate changes, run migrations, merge when ready.', span: '', bg: '' },
+            { icon: Globe, title: 'Global by default', text: 'Your data runs close to every user, every time.', span: '', bg: '' },
+            { icon: Rocket, title: 'Ship in minutes, not sprints', text: 'From signup to production in one afternoon.', span: 'col', bg: 'rgba(236,72,153,0.1)' },
+          ].map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div key={item.title}
+                style={{ padding: '28px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', background: item.bg || 'linear-gradient(135deg, rgba(20,16,30,0.5), rgba(8,6,14,0.5))', backdropFilter: 'blur(16px)', display: 'flex', flexDirection: 'column', gap: '12px', gridRow: item.span === 'row' ? 'span 2' : '', gridColumn: item.span === 'col' ? 'span 2' : '', transition: 'border-color 0.3s, transform 0.3s' }}
+                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: i * 0.08 }}
+                whileHover={{ y: -4, borderColor: 'rgba(236,72,153,0.4)' }}
+              >
+                <Icon size={22} style={{ color: '#ec4899' }} />
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, letterSpacing: '-0.02em' }}>{item.title}</h3>
+                <p style={{ margin: 0, color: '#8a8392', fontSize: '13px', lineHeight: 1.6 }}>{item.text}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Developer */}
+      <div id="developers" style={{ maxWidth: '1160px', margin: '0 auto', padding: '60px 32px 140px', display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: '80px', alignItems: 'center' }}>
+        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '9px', color: '#b8a8d4', textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: '11px', fontWeight: 700, padding: '7px 14px', borderRadius: '100px', background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)' }}>
+            <Sparkles size={13} /> Developer experience
+          </div>
+          <h2 style={{ margin: '20px 0 26px', fontSize: 'clamp(38px, 4.5vw, 60px)', lineHeight: 1.04, letterSpacing: '-0.06em', fontWeight: 700 }}>
+            From idea to<br /><span className="text-gradient">in production.</span>
+          </h2>
+          <p style={{ color: '#8a8392', fontSize: '14px', lineHeight: 1.8, maxWidth: '380px' }}>One SDK. One API. A thousand fewer things to worry about.</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}
+          style={{ overflow: 'hidden', border: '1px solid rgba(168,85,247,0.2)', borderRadius: '14px', background: '#0a0810' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', height: '46px', padding: '0 18px', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#77727e', fontSize: '11px', fontFamily: 'monospace' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {['#ff5f57','#ffbd2e','#28c840'].map((c) => <i key={c} style={{ display: 'block', width: '7px', height: '7px', borderRadius: '50%', background: c }} />)}
             </div>
-            <pre><code>{`import { NexaBase } from '@nexabase/sdk'
+            <span>nexabase.ts</span>
+            <span style={{ marginLeft: 'auto', color: '#53c5a3', fontSize: '9px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <LockKeyhole size={11} /> secure
+            </span>
+          </div>
+          <pre style={{ margin: 0, padding: '26px 30px', color: '#e0dcec', fontSize: '13px', lineHeight: 1.8, fontFamily: 'monospace', overflow: 'auto' }}>
+{`import { NexaBase } from '@nexabase/sdk'
 
 const nx = new NexaBase({
   url: 'https://backend-for-apps.onrender.com'
@@ -243,59 +189,70 @@ const { userId } = await nx.auth.signUp({
   password: '••••••••••'
 })
 
-// login
-const { access_token } = await nx.auth.signIn({
-  email: 'you@yourapp.com',
-  password: '••••••••••'
-})
-
 // store any data
 await nx.data.set({
   key: 'theme',
-  value: { mode: 'dark', color: 'purple' }
-})`}</code></pre>
-            <div className="code-result">
-              <span className="success-icon"><Check size={12} /></span>
-              Request completed <span>201 Created</span>
-            </div>
-          </motion.div>
-        </Section>
-
-        <Section className="pricing-section section-wrap" id="pricing">
-          <div className="pricing-heading">
-            <div className="eyebrow">Simple, transparent pricing</div>
-            <h2>Start free.<br /><span className="gradient-text">Scale when ready.</span></h2>
-            <p>Everything you need to ship your next big thing.</p>
+  value: { mode: 'dark' }
+})`}
+          </pre>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', color: '#817c89', fontSize: '10px', fontFamily: 'monospace' }}>
+            <span style={{ width: '18px', height: '18px', display: 'grid', placeItems: 'center', borderRadius: '50%', background: '#16493f', color: '#65e1bd' }}><Check size={12} /></span>
+            Request completed <span style={{ marginLeft: 'auto', color: '#51c09f' }}>201 Created</span>
           </div>
-          <div className="pricing-grid">
-            {plans.map((plan, i) => (
-              <motion.article className={`price-card ${plan.featured ? 'price-featured' : ''}`} key={plan.name}
-                initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.12 }}
+        </motion.div>
+      </div>
+
+      {/* Pricing */}
+      <div id="pricing" style={{ maxWidth: '1160px', margin: '0 auto', padding: '60px 32px 140px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <motion.div style={{ marginBottom: '50px' }} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+          <h2 style={{ fontSize: 'clamp(38px, 4.5vw, 60px)', lineHeight: 1.04, letterSpacing: '-0.06em', fontWeight: 700 }}>
+            Start free.<br /><span className="text-gradient">Scale when ready.</span>
+          </h2>
+          <p style={{ color: '#8a8392', fontSize: '14px', marginTop: '16px' }}>Everything you need to ship your next big thing.</p>
+        </motion.div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', maxWidth: '760px' }}>
+          {plans.map((plan, i) => (
+            <motion.div key={plan.name}
+              style={{ position: 'relative', padding: '32px 28px', border: plan.featured ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', background: plan.featured ? 'linear-gradient(145deg, rgba(168,85,247,0.15), rgba(14,10,20,0.8))' : 'rgba(10,8,16,0.6)', backdropFilter: 'blur(16px)' }}
+              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: i * 0.12 }}
+            >
+              {plan.featured && (
+                <div style={{ position: 'absolute', top: '-12px', right: '22px', padding: '6px 12px', borderRadius: '6px', color: '#fff', background: 'linear-gradient(90deg, #a855f7, #ec4899)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
+              )}
+              <div style={{ fontWeight: 700, fontSize: '18px' }}>{plan.name}</div>
+              <div style={{ color: '#726d79', fontSize: '12px', marginTop: '6px' }}>{plan.tagline}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', margin: '32px 0 10px' }}>
+                <strong style={{ fontSize: '44px', letterSpacing: '-0.07em', fontWeight: 700 }}>{plan.price}</strong>
+                <span style={{ color: '#716c79', fontSize: '13px' }}>{plan.period}</span>
+              </div>
+              <a href="https://backend-for-apps.onrender.com/health" target="_blank" rel="noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', margin: '22px 0 28px', padding: '14px 20px', borderRadius: '10px', color: '#fff', background: plan.featured ? 'linear-gradient(100deg, #a855f7, #ec4899)' : 'transparent', border: plan.featured ? 'none' : '1px solid #413b4d', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}
               >
-                {plan.featured && <div className="popular">Most popular</div>}
-                <div className="price-top">
-                  <span className="plan-name">{plan.name}</span>
-                  <span className="plan-caption">{plan.tagline}</span>
-                </div>
-                <div className="price"><strong>{plan.price}</strong><span>{plan.period}</span></div>
-                <p>{plan.featured ? 'More power for products ready to grow.' : 'Everything you need to bring an idea to life.'}</p>
-                <a className={`button ${plan.featured ? '' : 'button-outline'}`} href="https://backend-for-apps.onrender.com">{plan.cta} <ArrowRight size={16} /></a>
-                <ul>{plan.features.map((f) => <li key={f}><Check size={16} /> {f}</li>)}</ul>
-              </motion.article>
-            ))}
-          </div>
-        </Section>
-      </main>
-
-      <footer className="footer section-wrap">
-        <a className="brand" href="#top"><span className="brand-mark"><span /></span><span>Nexa<span className="brand-light">Base</span></span></a>
-        <p>Build the future, faster.</p>
-        <div className="footer-links">
-          <a href="#features">Features</a><a href="#docs">Docs</a><a href="#pricing">Pricing</a>
-          <a href="https://github.com/suhani-hue/backend-for-apps" aria-label="GitHub"><Github size={17} /></a>
+                {plan.cta} <ArrowRight size={16} />
+              </a>
+              <ul style={{ listStyle: 'none', display: 'grid', gap: '14px', padding: '20px 0 0', margin: 0, borderTop: '1px solid rgba(255,255,255,0.08)', color: '#b0abb8', fontSize: '13px' }}>
+                {plan.features.map((f) => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Check size={16} style={{ color: '#ec4899', flexShrink: 0 }} /> {f}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
         </div>
-        <div className="footer-bottom">
+      </div>
+
+      {/* Footer */}
+      <footer style={{ maxWidth: '1160px', margin: '0 auto', padding: '40px 32px 32px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+        <Logo />
+        <p style={{ color: '#615c68', fontSize: '12px' }}>Build the future, faster.</p>
+        <div style={{ display: 'flex', gap: '24px', color: '#807b89', fontSize: '12px', alignItems: 'center' }}>
+          <a href="#features" style={{ color: '#807b89', textDecoration: 'none' }}>Features</a>
+          <a href="#developers" style={{ color: '#807b89', textDecoration: 'none' }}>Docs</a>
+          <a href="#pricing" style={{ color: '#807b89', textDecoration: 'none' }}>Pricing</a>
+          <a href="https://github.com/suhani-hue/backend-for-apps" target="_blank" rel="noreferrer" style={{ color: '#807b89' }}><Github size={17} /></a>
+        </div>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#4f4b55', fontSize: '11px' }}>
           <span>© 2077 NexaBase, Inc.</span>
           <span>Made for the next million builders.</span>
         </div>
