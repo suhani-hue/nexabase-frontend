@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '../components/brand/Logo';
-import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Github } from 'lucide-react';
 
 const API = 'https://backend-for-apps.onrender.com/api';
 
@@ -41,6 +41,10 @@ export default function Login() {
     }
   };
 
+  const handleGithubLogin = () => {
+    window.location.href = `${API}/auth/github`;
+  };
+
   const inputStyle = {
     width: '100%',
     padding: '14px 16px',
@@ -51,33 +55,46 @@ export default function Login() {
     fontSize: '14px',
     outline: 'none',
     boxSizing: 'border-box' as const,
-    transition: 'border-color 0.2s',
   };
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', color: '#f5f5f5', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Navbar */}
       <header style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 32px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
           <Logo />
         </button>
         <button onClick={() => navigate('/register')} style={{ color: '#85838d', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer' }}>
-          Don't have an account? <span style={{ color: '#a855f7' }}>Sign up</span>
+          No account? <span style={{ color: '#a855f7' }}>Sign up</span>
         </button>
       </header>
 
-      {/* Background orbs */}
       <div style={{ position: 'fixed', top: '-200px', right: '-200px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(168,85,247,0.1)', filter: 'blur(80px)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: '-200px', left: '-200px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(236,72,153,0.08)', filter: 'blur(80px)', pointerEvents: 'none' }} />
 
-      {/* Login form */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
         <div style={{ width: '100%', maxWidth: '420px' }}>
 
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h1 style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '8px' }}>Welcome back</h1>
             <p style={{ color: '#8a8392', fontSize: '14px' }}>Sign in to your NexaBase account</p>
+          </div>
+
+          {/* GitHub OAuth Button */}
+          <button
+            onClick={handleGithubLogin}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', padding: '14px', borderRadius: '10px', background: '#24292e', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '24px', transition: 'all 0.2s' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#2d333b')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#24292e')}
+          >
+            <Github size={18} /> Continue with GitHub
+          </button>
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+            <span style={{ color: '#8a8392', fontSize: '12px' }}>or continue with email</span>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
           </div>
 
           {error && (
@@ -127,7 +144,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '10px', background: loading ? 'rgba(168,85,247,0.5)' : 'linear-gradient(100deg, #a855f7, #ec4899)', color: '#fff', fontSize: '14px', fontWeight: 700, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '8px', transition: 'all 0.2s' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '10px', background: loading ? 'rgba(168,85,247,0.5)' : 'linear-gradient(100deg, #a855f7, #ec4899)', color: '#fff', fontSize: '14px', fontWeight: 700, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '8px' }}
             >
               {loading ? 'Signing in...' : <>Sign in <ArrowRight size={16} /></>}
             </button>
